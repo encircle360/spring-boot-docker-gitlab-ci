@@ -1,0 +1,31 @@
+image: docker:dind
+services:
+  - docker:dind
+
+variables:
+  SPRING_PROFILES_ACTIVE: gitlab-ci
+  DOCKER_DRIVER: overlay2
+
+stages:
+  - build
+  - package
+  - deploy
+
+gradle-build:
+  image: java:8-jdk
+  stage: build
+  only:
+    - master
+  script: "./gradlew build"
+  artifacts:
+    paths:
+      - build/libs/*.jar
+
+docker-build:
+  stage: package
+  only:
+    - master
+  script:
+  - docker build -t $CI_REGISTRY_IMAGE .
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - docker push $CI_REGISTRY_IMAGE
